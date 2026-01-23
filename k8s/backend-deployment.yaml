@@ -1,0 +1,70 @@
+# ============================================
+# BACKEND DEPLOYMENT
+# ============================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+spec:
+  replicas: 2                     # 2 copies for reliability
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: dhruvi-backend:latest    # Our custom image
+        imagePullPolicy: Never          # Use local image (for Minikube)
+        ports:
+        - containerPort: 5000
+        env:
+        - name: PORT
+          value: "5000"
+        - name: MONGO_URL
+          # This connects to MongoDB using Kubernetes DNS
+          value: "mongodb://mongodb-service:27017/dhruvifeedback"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        # Health check - Kubernetes uses this to know if pod is healthy
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 3
+
+---
+# ============================================
+# BACKEND SERVICE
+# ============================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 5000
+    targetPort: 5000
+    nodePort: 30050
+  type: NodePort
