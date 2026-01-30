@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # Backend Service
+  backend:
+    build:
+      context: ./backend
+    container_name: dhruvi_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_DIALECT=mysql
+      - PORT=5000
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    networks:
+      - feedback-network
+    restart: always
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - REACT_APP_API_URL=http://localhost:5000
+    container_name: dhruvi_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - feedback-network
+    restart: always
+
+networks:
+  feedback-network:
+    driver: bridge
